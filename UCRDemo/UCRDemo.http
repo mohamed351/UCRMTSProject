@@ -1,0 +1,6 @@
+@UCRDemo_HostAddress = http://localhost:5106
+
+GET {{UCRDemo_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
