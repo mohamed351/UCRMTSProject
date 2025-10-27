@@ -177,6 +177,21 @@ namespace UCRMTS.dll.DTOS
 
         [JsonProperty("natureIdCargo")]
         public List<NatureIdCargo> NatureIdCargo { get; set; }
+
+        [JsonProperty("physicalLogisticsShippingMarks")]
+        public List<PhysicalLogisticsShippingMark> PhysicalLogisticsShippingMarks { get; set; }
+    }
+
+    public class PhysicalLogisticsShippingMark
+    {
+        [JsonProperty("marking")]
+        public List<Marking> Marking { get; set; }
+    }
+
+    public class Marking
+    {
+        [JsonProperty("content")]
+        public string Content { get; set; }
     }
 
     public class Issuer
@@ -316,10 +331,14 @@ namespace UCRMTS.dll.DTOS
         [JsonProperty("exportTradeCountry")]
         public ExportTradeCountry ExportTradeCountry { get; set; }
 
-        public static implicit operator List<object>(SpecifiedConsignment v)
-        {
-            throw new NotImplementedException();
-        }
+        [JsonProperty("finalDestinationTradeCountry")]
+        public FinalDestinationTradeCountry FinalDestinationTradeCountry { get; set; }
+    }
+
+    public class FinalDestinationTradeCountry
+    {
+        [JsonProperty("id")]
+        public List<Id> Id { get; set; }
     }
 
     public class SpecifiedLogisticsTransportMovement

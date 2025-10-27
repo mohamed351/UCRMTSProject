@@ -46,8 +46,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Authication.cs" />
+    <Compile Include="BookingDetailsItems.cs" />
     <Compile Include="DTOS\AuthicationResponseDTO.cs" />
     <Compile Include="DTOS\ExchangeDataPiplineDTO.cs" />
+    <Compile Include="MTSRequests.BookingDetails.cs" />
+    <Compile Include="MTSRequests.BookingStatus.cs" />
     <Compile Include="MTSRequests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scops.cs" />

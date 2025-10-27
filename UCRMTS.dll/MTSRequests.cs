@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,7 +11,7 @@ using static UCRMTS.dll.Scops;
 
 namespace UCRMTS.dll
 {
-    public class MTSRequests
+    public partial class MTSRequests
     {
 
         public static async Task<ExchangeDataPiplineDTO> UCRVerification(string ucr, string shipperId)
@@ -42,8 +44,178 @@ namespace UCRMTS.dll
 
 
         }
+       
+        public  static async Task<ExchangeDataPiplineDTO> ConfirmOrCancelBooking(BookingDetails details , BookingStatus bookingStatus)
+        {
 
-        public static async Task<bool> AddingConsignments(ExchangeDataPiplineDTO exchangeDataPipline)
+     
+
+            var currentObject = new ExchangeDataPiplineDTO()
+            {
+                ExchangedDocument = new ExchangedDocument()
+                {
+                    IssueDateTime = DateTime.Now,
+                    Issuer = new Issuer()
+                    {
+                        Id = new List<Id>() { new Id() { Content = details.IssuerTax } }
+                    },
+                    RoleCode = new List<RoleCode>()
+                      {
+                          new RoleCode() {Content = details.Type}
+                      }
+
+                },
+                ExchangedDeclaration = new ExchangedDeclaration()
+                {
+                    Id = new List<Id>()
+                    {
+                         new Id(){ Content = details.UCR}
+                      },
+                    TypeCode = new DTOS.TypeCode()
+                    {
+                        Content =  ((int)bookingStatus).ToString(),
+
+                    },
+                    Declarant = new Declarant()
+                    {
+                        Id = new List<Id>()
+                     {
+                         new Id(){ Content =details.ShipperTaxCode},
+                     }
+                    }
+
+
+                },
+                SpecifiedLogisticsTransportMovement = new List<SpecifiedLogisticsTransportMovement>()
+               {
+                   new SpecifiedLogisticsTransportMovement()
+                   {
+                       LoadingEvent = new LoadingEvent()
+                       {
+                           ScheduledOccurrenceDateTime = details.LoadingTime,
+                           OccurrenceLogisticsLocation = new OccurrenceLogisticsLocation()
+                           {
+                               Id= new List<Id>()
+                               {
+                                  new Id() { Content = details.PortOfLoadingCode}
+                               }
+                           },
+
+                       },
+                       UnloadingEvent = new UnloadingEvent()
+                       {
+                             ScheduledOccurrenceDateTime =details.LoadingTime,
+                           OccurrenceLogisticsLocation= new OccurrenceLogisticsLocation()
+                           {
+                               Id= new List<Id>()
+                               {
+                                   new Id(){Content = details.PortOfDeschargeCode}
+                               }
+                           }
+                       },
+                      UsedLogisticsTransportMeans = new UsedLogisticsTransportMeans()
+                      {
+                          Id = new List<Id>()
+                          {
+                              new Id(){ Content = details.VesselImo}
+                          },
+                          Name = new Name()
+                          {
+                              Content =details.VesselTitle,
+                          },
+                          RegistrationTradeCountry = new RegistrationTradeCountry()
+                          {
+                              Id= new List<Id>(){
+                                  new Id() {Content = details.TradingCountry}
+                              }
+                          }
+
+                      },
+
+
+
+
+
+                   }
+               },
+                SpecifiedConsignment = new List<SpecifiedConsignment>()
+               {
+                   new SpecifiedConsignment()
+                   {
+                       Id= new List<Id>()
+                       {
+                          new Id(){Content = details.UCR}
+                       },
+                       Carrier = new Carrier()
+                       {
+                           Id = new List<Id>()
+                           {
+                                new Id() {Content = details.ShippingLineID}
+                           },
+                           Name = new List<Name>()
+                           {
+                               new Name() {Content = details.ShippingLineCode}
+                           }
+                       },
+                       ConsignmentItemQuantity = new ConsignmentItemQuantity()
+                       {
+                           Content = details.Details.Sum(a=> a.NoOfPackages).ToString()
+                       },
+                       GrossWeight =    details.Details.Select(a=> new GrossWeight() {Content = a.GrossWieght.ToString() , UnitCode =a.MeasurmentID}).ToList(),
+                       IncludedConsignmentItem = details.Details.Select((line,index) => new IncludedConsignmentItem()
+                       {
+                           SequenceNumeric = new SequenceNumeric()
+                           {
+                               Content   =(index+1) .ToString()
+                           },
+                           NatureIdCargo = new List<NatureIdCargo>()
+                           {
+                               new NatureIdCargo() {Content=line.CargoDescription}
+                           },
+                           PhysicalLogisticsShippingMarks = new List<PhysicalLogisticsShippingMark>()
+                           {
+                               new PhysicalLogisticsShippingMark()
+                               {
+                                   Marking =new List<Marking>()
+                                   {
+                                       new Marking()
+                                       {
+                                           Content = $"{line.Nos} X {line.ContainerType} "
+                                       }
+                                   }
+                               }
+                           },
+
+
+
+                       }).ToList(),
+
+                      FinalDestinationTradeCountry =  new FinalDestinationTradeCountry() { Id = new List<Id>(){ new Id() { Content = details.FinalTradingCountryCode } }
+
+,
+
+
+                   },
+
+
+               },
+
+
+
+
+}
+            };
+            if( await AddingConsignments(currentObject)){
+                return currentObject;
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+
+        private static async Task<bool> AddingConsignments(ExchangeDataPiplineDTO exchangeDataPipline)
         {
             Authication authication = new Authication();
             var authResult = await authication.SignIn(AuthicationType.WaypointSubmit);
@@ -52,6 +224,7 @@ namespace UCRMTS.dll
             {
 
                 http.DefaultRequestHeaders.Add("Authorization", $"Bearer {authResult.AccessToken}");
+                http.DefaultRequestHeaders.Add("Accept", "application/json");
                 http.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
                 http.DefaultRequestHeaders.Add("requestId", Guid.NewGuid().ToString());
                 var requestBody = JsonConvert.SerializeObject(exchangeDataPipline);
