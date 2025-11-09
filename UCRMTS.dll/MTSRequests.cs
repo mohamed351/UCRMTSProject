@@ -406,11 +406,7 @@ namespace UCRMTS.dll
                 http.DefaultRequestHeaders.Add("Accept", "application/json");
                 http.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
                 http.DefaultRequestHeaders.Add("requestId", Guid.NewGuid().ToString());
-                var requestBody = JsonConvert.SerializeObject(exchangeDataPipline, new JsonSerializerSettings
-                {
-                    ContractResolver = new IgnoreNullAndEmptyResolver(),
-                    Formatting = Formatting.Indented
-                });
+                var requestBody = JsonConvert.SerializeObject(exchangeDataPipline);
                 var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
                 var response = await http.PostAsync(url, content);
                 if (response.IsSuccessStatusCode)
