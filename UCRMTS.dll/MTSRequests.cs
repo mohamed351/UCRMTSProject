@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using UCRMTS.dll.DTOS;
+using static UCRMTS.dll.MTSRequests;
 using static UCRMTS.dll.Scops;
 
 namespace UCRMTS.dll
@@ -214,8 +215,186 @@ namespace UCRMTS.dll
             }
 
         }
+        public static async Task<bool> AddingEmptyContainer(EmptyContainerRequest details)
+        {
+            var currentObject = new ExchangeDataPiplineDTO()
+            {
+                ExchangedDocument = new ExchangedDocument()
+                {
+                    IssueDateTime = DateTime.Now,
+                    Issuer = new Issuer()
+                    {
+                        Id = new List<Id>() { new Id() { Content = details.IssuerID } }
+                    },
+                    RoleCode = new List<RoleCode>()
+                      {
+                          new RoleCode() {Content = details.TypeCode}
+                      }
 
-        private static async Task<bool> AddingConsignments(ExchangeDataPiplineDTO exchangeDataPipline)
+                },
+                ExchangedDeclaration = new ExchangedDeclaration()
+                {
+                    Id = new List<Id>()
+                    {
+                         new Id(){ Content = details.UCR}
+                      },
+                    TypeCode = new DTOS.TypeCode()
+                    {
+                        Content = "13"
+
+                    },
+                    Declarant = new Declarant()
+                    {
+                        Id = new List<Id>()
+                     {
+                         new Id(){ Content =details.ReciverID},
+                     }
+                    }
+
+
+                },
+                SpecifiedLogisticsTransportMovement = new List<SpecifiedLogisticsTransportMovement>()
+                {
+                    
+                    new SpecifiedLogisticsTransportMovement()
+                    {
+                        LoadingEvent = new LoadingEvent()
+                        {
+                             OccurrenceLogisticsLocation = new OccurrenceLogisticsLocation()
+                             {
+                                 Id = new List<Id>()
+                                 {
+                                       new Id() { Content = details.POL}
+                                 },
+                                 Name = new List<Name>()
+                                 {
+                                     new Name() {Content =details.POL}
+                                 }
+                             },
+                                ScheduledOccurrenceDateTime= details.POLEvent
+                        } ,
+                        UnloadingEvent = new UnloadingEvent()
+                        {
+                             OccurrenceLogisticsLocation = new OccurrenceLogisticsLocation()
+                             {
+                                 Id = new List<Id>()
+                                 {
+                                     new Id() {Content = details.POD}
+                                 },
+                                 Name =new List<Name>()
+                                 {
+                                     new Name() {Content =details.POD}
+                                 }
+                             },
+                             ScheduledOccurrenceDateTime= details.POLEvent
+                        },
+                        UsedLogisticsTransportMeans = new UsedLogisticsTransportMeans()
+                        {
+                             Id = new List<Id>()
+                             {
+                                  new Id(){ Content = details.TradingCountryIsoCode}
+                             },
+                             Name = new Name()
+                             {
+                                  Content = details.TradingCountryIsoCode
+                             },
+                             RegistrationTradeCountry = new RegistrationTradeCountry()
+                             {
+                                 Id = new List<Id>()
+                                 {
+                                    new Id(){ Content = details.TradingCountryIsoCode}
+                                 },
+                                 Name = new List<Name>()
+                                 {
+                                      new Name(){ Content = details.TradingCountryIsoCode}
+                                 }
+                             }
+                             
+                            
+
+                        }
+                    }
+                },
+                SpecifiedConsignment = new List<SpecifiedConsignment>()
+                {
+                    new SpecifiedConsignment()
+                    {
+                        Id = new List<Id>()
+                        {
+                             new Id() { Content = details.UCR}
+                        }
+                        ,
+                        TransportContractReferencedDocument = new TransportContractReferencedDocument()
+                        {
+                            Id = new List<Id>()
+                            {
+                                new Id() {Content = details.ShippingOrderNumber}
+                            }
+                        },
+                       
+                        UtilizedLogisticsTransportEquipment = details.ContainerDetails.Select(a=> new UtilizedLogisticsTransportEquipment()
+                        {
+                            Id = new Id()
+                            {
+                                Content = a.ContainerNumber,
+
+                            },
+                            UsedCapacityCode =new UsedCapacityCode()
+                            {
+                                     Content = a.UsedCapacityCode
+                            },
+                            OperationalStatusCode = new OperationalStatusCode()
+                            {
+                                Content =a.OperationalStatusCode
+                            },
+                              GrossWeight = new GrossWeight()
+                              {
+                                  Content = a.GrossWeight,
+                                  UnitCode = a.GrossWeightType
+
+
+                              } , 
+                              AffixedLogisticsSeal = a.ContainerSeals.Select(b=> new AffixedLogisticsSeal()
+                              {
+                                    Id = new List<Id>()
+                                    {
+                                        new Id(){ Content = b.Serial.ToString()}
+                                    },
+                                    ConditionCode = new List<ConditionCode>()
+                                    {
+                                        new ConditionCode() { Content = b.ConditionCode}
+                                    },
+                                     SealingPartyRoleCode = new SealingPartyRoleCode()
+                                     {
+                                          Content =  b.RoleCode
+                                     }
+                              }).ToList(),
+                             TareWeight = new TareWeight()
+                             {
+                                 Content = a.TareWeight,
+                                 UnitCode = a.TareWeightType
+                             },
+                             CharacteristicCode = new CharacteristicCode()
+                             {
+                                 Content = a.ContainerType
+                             }
+
+                        }).ToList()
+
+
+                    },
+
+
+                },
+
+
+
+            };
+
+           return await AddingConsignments(currentObject);
+        }
+
+        public static async Task<bool> AddingConsignments(ExchangeDataPiplineDTO exchangeDataPipline)
         {
             Authication authication = new Authication();
             var authResult = await authication.SignIn(AuthicationType.WaypointSubmit);
@@ -227,7 +406,11 @@ namespace UCRMTS.dll
                 http.DefaultRequestHeaders.Add("Accept", "application/json");
                 http.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
                 http.DefaultRequestHeaders.Add("requestId", Guid.NewGuid().ToString());
-                var requestBody = JsonConvert.SerializeObject(exchangeDataPipline);
+                var requestBody = JsonConvert.SerializeObject(exchangeDataPipline, new JsonSerializerSettings
+                {
+                    ContractResolver = new IgnoreNullAndEmptyResolver(),
+                    Formatting = Formatting.Indented
+                });
                 var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
                 var response = await http.PostAsync(url, content);
                 if (response.IsSuccessStatusCode)

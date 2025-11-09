@@ -425,7 +425,7 @@ namespace UCRMTS.dll.DTOS
     public class UtilizedLogisticsTransportEquipment
     {
         [JsonProperty("id")]
-        public List<Id> Id { get; set; }
+        public Id Id { get; set; }
 
         [JsonProperty("grossWeight")]
         public GrossWeight GrossWeight { get; set; }
