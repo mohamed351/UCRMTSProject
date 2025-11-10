@@ -334,11 +334,10 @@ namespace UCRMTS.dll
                        
                         UtilizedLogisticsTransportEquipment = details.ContainerDetails.Select(a=> new UtilizedLogisticsTransportEquipment()
                         {
-                            Id = new Id()
-                            {
-                                Content = a.ContainerNumber,
-
-                            },
+                          Id = new List<Id>()
+                          {
+                               new Id() {Content = a.ContainerNumber}
+                          },
                             UsedCapacityCode =new UsedCapacityCode()
                             {
                                      Content = a.UsedCapacityCode
